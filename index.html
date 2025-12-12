@@ -196,7 +196,7 @@
         <div class="promo-info">
             <h3>💡 優惠方案說明：</h3>
             <ul>
-                <li>方案一：選購【我們都是模範生】+【任一套以上】= <strong>6折優惠</strong></li>
+                <li>方案一：選購【我們都是模範生】+【任一套】= <strong>6折優惠(一套模範生，限搭一套)</strong></li>
                 <li>方案二：選購【任二套】(不含我們都是模範生) = <strong>75折優惠</strong></li>
             </ul>
         </div>
@@ -253,12 +253,14 @@
             const checkboxes = document.querySelectorAll('input[type="checkbox"]');
             let selectedProducts = [];
             let hasSpecial = false;
+            let specialProduct = null;
             
             checkboxes.forEach((checkbox, index) => {
                 if (checkbox.checked) {
                     selectedProducts.push(products[index]);
                     if (products[index].special) {
                         hasSpecial = true;
+                        specialProduct = products[index];
                     }
                 }
             });
@@ -266,17 +268,31 @@
             const originalTotal = selectedProducts.reduce((sum, p) => sum + p.price, 0);
             let finalAmount = originalTotal;
             let discountText = "尚未選擇產品";
-            let discount = 1;
 
             if (selectedProducts.length === 0) {
                 discountText = "尚未選擇產品";
             } else if (hasSpecial && selectedProducts.length >= 2) {
-                discount = 0.6;
-                finalAmount = Math.round(originalTotal * discount);
-                discountText = "適用優惠：方案一：選購【我們都是模範生】+【任一套以上】= 6折優惠";
+                // 方案一：模範生+最貴一套享6折，其餘套數75折
+                const otherProducts = selectedProducts.filter(p => !p.special);
+                
+                // 找出最貴的一套
+                otherProducts.sort((a, b) => b.price - a.price);
+                const mostExpensive = otherProducts[0];
+                const remainingProducts = otherProducts.slice(1);
+                
+                // 計算金額
+                const discount60 = (specialProduct.price + mostExpensive.price) * 0.6;
+                const discount75 = remainingProducts.reduce((sum, p) => sum + p.price, 0) * 0.75;
+                
+                finalAmount = Math.round(discount60 + discount75);
+                
+                if (remainingProducts.length > 0) {
+                    discountText = `適用優惠：方案一(模範生+${mostExpensive.name})享6折 + 方案二(其餘${remainingProducts.length}套)享75折`;
+                } else {
+                    discountText = "適用優惠：方案一：選購【我們都是模範生】+【任一套】= 6折優惠(一套模範生，限搭一套)";
+                }
             } else if (!hasSpecial && selectedProducts.length >= 2) {
-                discount = 0.75;
-                finalAmount = Math.round(originalTotal * discount);
+                finalAmount = Math.round(originalTotal * 0.75);
                 discountText = "適用優惠：方案二：選購【任二套】(不含我們都是模範生) = 75折優惠";
             } else {
                 discountText = "未達優惠門檻";
